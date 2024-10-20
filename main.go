@@ -15,9 +15,7 @@ func Hidden() int {
 }
 
 func main() {
-	fmt.Println("Hello SumProblem")
-
-	problems := make([]string, 0, 132)
+	problems := make([]string, 0, 256)
 
 	subCnt := 0
 	for i := 10; i > 0; i-- {
@@ -64,7 +62,7 @@ func main() {
 
 	cnt := 0
 	for _, p := range problems {
-		fmt.Print("", p)
+		fmt.Print(p)
 		cnt = cnt + 1
 		if cnt%6 == 0 {
 			fmt.Print("\n")

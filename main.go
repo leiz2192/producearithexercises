@@ -3,58 +3,55 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 )
 
+var (
+	// 使用当前时间作为种子来创建一个新的随机数源,基于新的随机数源创建一个新的随机数生成器
+	rng = rand.New(rand.NewSource(time.Now().UnixNano()))
+)
+
 func Hidden() int {
-	// 使用当前时间作为种子来创建一个新的随机数源
-	source := rand.NewSource(time.Now().UnixNano())
-	// 基于新的随机数源创建一个新的随机数生成器
-	rng := rand.New(source)
 	return rng.Intn(4)
 }
 
 func Right() bool {
-	// 使用当前时间作为种子来创建一个新的随机数源
-	source := rand.NewSource(time.Now().UnixNano())
-	// 基于新的随机数源创建一个新的随机数生成器
-	rng := rand.New(source)
 	return rng.Intn(2) == 0
 }
 
+// Reverse s like "AA - BB = CC" to "CC = AA - BB"
+func Reverse(s string) string {
+	var sb strings.Builder
+	sb.WriteString(s[10:])
+	sb.WriteString(s[7:10])
+	sb.WriteString(s[:7])
+	return sb.String()
+}
+
 func Equation(lhs, rhs, res int, op string) string {
-	idx := Hidden()
-	right := Right()
 	var equation string
+	idx := Hidden()
 	switch idx {
 	case 0:
-		if right {
-			equation = fmt.Sprintf("%2s %s %2d = %2d", " ", op, rhs, res)
-		} else {
-			equation = fmt.Sprintf("%2d = %2s %s %2d", res, " ", op, rhs)
-		}
+		equation = fmt.Sprintf("%2s %s %2d = %2d", " ", op, rhs, res)
 	case 1:
-		if right {
-			equation = fmt.Sprintf("%2d %s %2s = %2d", lhs, op, " ", res)
-		} else {
-			equation = fmt.Sprintf("%2d = %2d %s %2s", res, lhs, op, " ")
-		}
+		equation = fmt.Sprintf("%2d %s %2s = %2d", lhs, op, " ", res)
 	case 2:
-		if right {
-			equation = fmt.Sprintf("%2d   %2d = %2d", lhs, rhs, res)
-		} else {
-			equation = fmt.Sprintf("%2d = %2d   %2d", res, lhs, rhs)
-		}
+		equation = fmt.Sprintf("%2d   %2d = %2d", lhs, rhs, res)
 	case 3:
 		fallthrough
 	default:
 		equation = fmt.Sprintf("%2d %s %2d = %2s", lhs, op, rhs, " ")
 	}
+	if idx < 3 && !Right() {
+		return Reverse(equation)
+	}
 	return equation
 }
 
 func main() {
-	problems := make([]string, 0, 256)
+	problems := make([]string, 0, 100)
 
 	subCnt := 0
 	for i := 10; i > 0; i-- {
@@ -90,5 +87,4 @@ func main() {
 		}
 	}
 	fmt.Printf("\nsubCnt: %d, addCnt: %d\n", subCnt, addCnt)
-
 }

@@ -11,7 +11,46 @@ func Hidden() int {
 	source := rand.NewSource(time.Now().UnixNano())
 	// 基于新的随机数源创建一个新的随机数生成器
 	rng := rand.New(source)
-	return rng.Intn(3)
+	return rng.Intn(4)
+}
+
+func Right() bool {
+	// 使用当前时间作为种子来创建一个新的随机数源
+	source := rand.NewSource(time.Now().UnixNano())
+	// 基于新的随机数源创建一个新的随机数生成器
+	rng := rand.New(source)
+	return rng.Intn(2) == 0
+}
+
+func Equation(lhs, rhs, res int, op string) string {
+	idx := Hidden()
+	right := Right()
+	var equation string
+	switch idx {
+	case 0:
+		if right {
+			equation = fmt.Sprintf("%2s %s %2d = %2d", " ", op, rhs, res)
+		} else {
+			equation = fmt.Sprintf("%2d = %2s %s %2d", res, " ", op, rhs)
+		}
+	case 1:
+		if right {
+			equation = fmt.Sprintf("%2d %s %2s = %2d", lhs, op, " ", res)
+		} else {
+			equation = fmt.Sprintf("%2d = %2d %s %2s", res, lhs, op, " ")
+		}
+	case 2:
+		if right {
+			equation = fmt.Sprintf("%2d   %2d = %2d", lhs, rhs, res)
+		} else {
+			equation = fmt.Sprintf("%2d = %2d   %2d", res, lhs, rhs)
+		}
+	case 3:
+		fallthrough
+	default:
+		equation = fmt.Sprintf("%2d %s %2d = %2s", lhs, op, rhs, " ")
+	}
+	return equation
 }
 
 func main() {
@@ -20,17 +59,7 @@ func main() {
 	subCnt := 0
 	for i := 10; i > 0; i-- {
 		for j := i; j > 0; j-- {
-			idx := Hidden()
-			switch idx {
-			case 0:
-				problems = append(problems, fmt.Sprintf("%2s - %2d = %2d", " ", j, i-j))
-			case 1:
-				problems = append(problems, fmt.Sprintf("%2d - %2s = %2d", i, " ", i-j))
-			case 2:
-				fallthrough
-			default:
-				problems = append(problems, fmt.Sprintf("%2d - %2d = %2s", i, j, " "))
-			}
+			problems = append(problems, Equation(i, j, i-j, "-"))
 			subCnt++
 		}
 	}
@@ -41,17 +70,7 @@ func main() {
 			if i+j > 10 {
 				break
 			}
-			idx := Hidden()
-			switch idx {
-			case 0:
-				problems = append(problems, fmt.Sprintf("%2s + %2d = %2d", " ", j, i+j))
-			case 1:
-				problems = append(problems, fmt.Sprintf("%2d + %2s = %2d", i, " ", i+j))
-			case 2:
-				fallthrough
-			default:
-				problems = append(problems, fmt.Sprintf("%2d + %2d = %2s", i, j, " "))
-			}
+			problems = append(problems, Equation(i, j, i+j, "+"))
 			addCnt++
 		}
 	}

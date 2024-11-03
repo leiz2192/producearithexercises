@@ -1,0 +1,27 @@
+
+<style>
+  .responsive-textarea {
+    width: 50%;
+    height: 80%;
+    font-family: monospace;
+    font-size: 18px;
+    white-space: pre;
+    overflow-x: auto;
+  }
+</style>
+
+<html>
+    <body>
+        <h1>{{.Title}}</h1>
+        <form action="/submit" method="post">
+            <label for="options">Choose an option:</label>
+            <select name="options" id="options" onchange="this.form.submit()">
+                {{range $index, $option := .Options}}
+                <option value="{{ $option }}" {{if eq $option $.Selected}}selected{{end}}>{{ $option }}</option>
+                {{end}}
+            </select>
+            <button type="submit">Update</button>
+        </form>
+        <textarea class = "responsive-textarea" readonly>{{.Content}}</textarea>
+    </body>
+</html>

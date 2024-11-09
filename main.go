@@ -15,26 +15,20 @@ type ArithMode int
 
 const (
 	Empty ArithMode = iota
-	TwoNum
-	FillWithTwoNum
-	ThreeNum
+	AddSub
+	FillWithOneEquation
+	MultiAddSub
+	AddSubMix
+	FillWithTwoEquation
 	Unknown
 )
 
 var (
-	Options = []string{"", "10以内的加减", "10以内的加减填空", "10以内的连加或连减"}
+	Options = []string{"", "10以内加减", "10以内算式填空", "10以内连加或连减", "10以内加减混合", "10以内两边算式填空"}
 
 	// 使用当前时间作为种子来创建一个新的随机数源,基于新的随机数源创建一个新的随机数生成器
 	rng = rand.New(rand.NewSource(time.Now().UnixNano()))
 )
-
-func Hidden() int {
-	return rng.Intn(4)
-}
-
-func Right() bool {
-	return rng.Intn(2) == 0
-}
 
 // Reverse s like "AA - BB = CC" to "CC = AA - BB"
 func Reverse(s string) string {
@@ -47,7 +41,7 @@ func Reverse(s string) string {
 
 func Equation(lhs, rhs, res int, op string, hidden bool) string {
 	var equation string
-	idx := Hidden()
+	idx := rng.Intn(4)
 	if !hidden {
 		idx = math.MaxInt
 	}
@@ -63,16 +57,14 @@ func Equation(lhs, rhs, res int, op string, hidden bool) string {
 	default:
 		equation = fmt.Sprintf("%2d %s %2d = %2s", lhs, op, rhs, " ")
 	}
-	if idx < 3 && !Right() {
+	if idx < 3 && rng.Intn(2) != 0 {
 		return Reverse(equation)
 	}
 	return equation
 }
 
 func Format(equations []string, colNum int) string {
-	rand.Shuffle(len(equations), func(i, j int) {
-		equations[i], equations[j] = equations[j], equations[i]
-	})
+	rand.Shuffle(len(equations), func(i, j int) { equations[i], equations[j] = equations[j], equations[i] })
 
 	var ret strings.Builder
 	cnt := 0
@@ -88,7 +80,7 @@ func Format(equations []string, colNum int) string {
 	return ret.String()
 }
 
-func TwoNumExercises(hidden bool) string {
+func AddSubExercises(hidden bool) string {
 	equations := make([]string, 0, 100)
 
 	subCnt := 0
@@ -117,7 +109,7 @@ func TriEquation(lhs, mhs, rhs int, op string) string {
 	return fmt.Sprintf("%2d %s %2d %s %2d = %2s", lhs, op, mhs, op, rhs, " ")
 }
 
-func ThreeNumExercies() string {
+func MultiAddSubExercies() string {
 	equations := make([]string, 0, 215)
 
 	subCnt := 0
@@ -149,16 +141,96 @@ func ThreeNumExercies() string {
 	return fmt.Sprintf("%s\nsubCnt: %d, addCnt: %d\n", Format(equations, 5), subCnt, addCnt)
 }
 
+func AddSubMixExercies() string {
+	equations := make([]string, 0, 128)
+
+	preSubCnt := 0
+	for i := 10; i > 0; i-- {
+		for j := i; j > 0; j-- {
+			for k := j; k > 0; k-- {
+				if i-j+k > 10 {
+					continue
+				}
+				equations = append(equations, fmt.Sprintf("%2d - %2d + %2d = %2s", i, j, k, " "))
+				preSubCnt++
+			}
+		}
+	}
+
+	preAddCnt := 0
+	for i := 1; i <= 10; i++ {
+		for j := 1; j <= 10; j++ {
+			if i+j > 10 {
+				continue
+			}
+			for k := 1; k <= 10; k++ {
+				if i+j-k < 0 {
+					continue
+				}
+				equations = append(equations, fmt.Sprintf("%2d + %2d - %2d = %2s", i, j, k, " "))
+				preAddCnt++
+			}
+		}
+	}
+	return fmt.Sprintf("%s\npreSubCnt: %d, preAddCnt: %d\n", Format(equations, 5), preSubCnt, preAddCnt)
+}
+
+func ReplaceCharAt(s string, start int, replacement string) string {
+	var sb strings.Builder
+	sb.WriteString(s[0:start])
+	sb.WriteString(replacement)
+	sb.WriteString(s[start+len(replacement):])
+	return sb.String()
+}
+
+func FillWithTwoEquationExercies() string {
+	expressions := make(map[int][]string)
+	for i := 10; i > 0; i-- {
+		for j := i - 1; j > 0; j-- {
+			expressions[i-j] = append(expressions[i-j], fmt.Sprintf("%2d - %2d", i, j))
+		}
+	}
+
+	for i := 1; i <= 10; i++ {
+		for j := 1; j <= 10; j++ {
+			if i+j > 10 {
+				continue
+			}
+			expressions[i+j] = append(expressions[i+j], fmt.Sprintf("%2d + %2d", i, j))
+		}
+	}
+
+	totalCnt := 0
+	equations := make([]string, 0, 128)
+	for _, es := range expressions {
+		rand.Shuffle(len(es), func(i, j int) { es[i], es[j] = es[j], es[i] })
+		for i := 0; i < len(es)-1; i++ {
+			for j := i + 1; j < len(es); j++ {
+				e := fmt.Sprintf("%s = %s", es[i], es[j])
+				fill := rng.Intn(4)
+				// AA + BB = CC + DD, replace AA/BB/CC/DD to "  "
+				equations = append(equations, ReplaceCharAt(e, fill*5, "  "))
+				totalCnt++
+			}
+		}
+	}
+	return fmt.Sprintf("%s\ntotalCnt: %d\n", Format(equations, 4), totalCnt)
+}
+
 func Produce(mode ArithMode) string {
 	switch mode {
 	case Empty:
 		return ""
-	case TwoNum:
-		return TwoNumExercises(false)
-	case FillWithTwoNum:
-		return TwoNumExercises(true)
-	case ThreeNum:
-		return ThreeNumExercies()
+	case AddSub:
+		return AddSubExercises(false)
+	case FillWithOneEquation:
+		return AddSubExercises(true)
+	case MultiAddSub:
+		return MultiAddSubExercies()
+	case AddSubMix:
+		return AddSubMixExercies()
+	case FillWithTwoEquation:
+		return FillWithTwoEquationExercies()
 	default:
 		return "unsupport this option"
 	}
@@ -181,6 +253,7 @@ func main() {
 
 	r := gin.Default()
 	r.LoadHTMLGlob("templates/*")
+	r.StaticFile("/favicon.ico", "./resources/favicon.ico")
 	// 定义路由和处理函数
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.tmpl", data)

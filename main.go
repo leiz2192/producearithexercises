@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -20,11 +21,12 @@ const (
 	MultiAddSub
 	AddSubMix
 	FillWithTwoEquation
+	FillWithAddSubMix
 	Unknown
 )
 
 var (
-	Options = []string{"", "10以内加减", "10以内算式填空", "10以内连加或连减", "10以内加减混合", "10以内两边算式填空"}
+	Options = []string{"", "10以内加减", "10以内算式填空", "10以内连加或连减", "10以内加减混合", "10以内两边算式填空", "10以内两边加减算式填空"}
 
 	// 使用当前时间作为种子来创建一个新的随机数源,基于新的随机数源创建一个新的随机数生成器
 	rng = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -146,9 +148,9 @@ func AddSubMixExercies() string {
 
 	preSubCnt := 0
 	for i := 10; i > 0; i-- {
-		for j := i; j > 0; j-- {
-			for k := j; k > 0; k-- {
-				if i-j+k > 10 {
+		for j := i - 1; j > 0; j-- {
+			for k := 1; k <= 10; k++ {
+				if i-j+k > 10 || k == j {
 					continue
 				}
 				equations = append(equations, fmt.Sprintf("%2d - %2d + %2d = %2s", i, j, k, " "))
@@ -165,6 +167,9 @@ func AddSubMixExercies() string {
 			}
 			for k := 1; k <= 10; k++ {
 				if i+j-k < 0 {
+					continue
+				}
+				if k == i || k == j {
 					continue
 				}
 				equations = append(equations, fmt.Sprintf("%2d + %2d - %2d = %2s", i, j, k, " "))
@@ -206,15 +211,58 @@ func FillWithTwoEquationExercies() string {
 		rand.Shuffle(len(es), func(i, j int) { es[i], es[j] = es[j], es[i] })
 		for i := 0; i < len(es)-1; i++ {
 			for j := i + 1; j < len(es); j++ {
-				e := fmt.Sprintf("%s = %s", es[i], es[j])
 				fill := rng.Intn(4)
 				// AA + BB = CC + DD, replace AA/BB/CC/DD to "  "
-				equations = append(equations, ReplaceCharAt(e, fill*5, "  "))
+				equations = append(equations, ReplaceCharAt(fmt.Sprintf("%s = %s", es[i], es[j]), fill*5, "  "))
 				totalCnt++
 			}
 		}
 	}
-	return fmt.Sprintf("%s\ntotalCnt: %d\n", Format(equations, 4), totalCnt)
+	return fmt.Sprintf("%s\ntotalCnt: %d\n", Format(equations, 5), totalCnt)
+}
+
+func FilleWithAddSubMixExercies() string {
+	expressions := make(map[int][]string)
+	for i := 10; i > 0; i-- {
+		for j := i - 1; j > 0; j-- {
+			for k := 1; k <= 10; k++ {
+				if i-j+k > 10 || k == j {
+					continue
+				}
+				expressions[i-j+k] = append(expressions[i-j+k], fmt.Sprintf("%2d - %2d + %2d", i, j, k))
+			}
+		}
+	}
+	for i := 1; i <= 10; i++ {
+		for j := 1; j <= 10; j++ {
+			if i+j > 10 {
+				continue
+			}
+			for k := 1; k <= 10; k++ {
+				if i+j-k < 0 {
+					continue
+				}
+				if k == i || k == j {
+					continue
+				}
+				expressions[i+j-k] = append(expressions[i+j-k], fmt.Sprintf("%2d + %2d - %2d", i, j, k))
+			}
+		}
+	}
+	totalCnt := 0
+	equations := make([]string, 0, 128)
+	for _, es := range expressions {
+		rand.Shuffle(len(es), func(i, j int) { es[i], es[j] = es[j], es[i] })
+		for i := 0; i < len(es)-1; i++ {
+			for j := i + 1; j < len(es); j++ {
+				fill := rng.Intn(6)
+				// AA + BB + CC = DD + EE + FF, replace AA/BB/CC/DD/EE/FF to "  "
+				equations = append(equations, ReplaceCharAt(fmt.Sprintf("%s = %s", es[i], es[j]), fill*5, "  "))
+				totalCnt++
+			}
+		}
+	}
+	return fmt.Sprintf("%s\ntotalCnt: %d\n", Format(equations, 3), totalCnt)
 }
 
 func Produce(mode ArithMode) string {
@@ -231,6 +279,8 @@ func Produce(mode ArithMode) string {
 		return AddSubMixExercies()
 	case FillWithTwoEquation:
 		return FillWithTwoEquationExercies()
+	case FillWithAddSubMix:
+		return FilleWithAddSubMixExercies()
 	default:
 		return "unsupport this option"
 	}
@@ -270,5 +320,23 @@ func main() {
 		data.Selected = selected
 		c.HTML(http.StatusOK, "index.tmpl", data)
 	})
-	r.Run(":9090")
+	// r.Run(":9090")
+
+	// 创建一个TCP监听器，使用 ":0" 表示随机端口
+	ln, err := net.Listen("tcp", ":8090")
+	if err != nil {
+		panic(err)
+	}
+	defer ln.Close()
+
+	// 获取随机分配的端口号
+	_, port, err := net.SplitHostPort(ln.Addr().String())
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Listening and serving HTTP on", port)
+
+	if err := r.RunListener(ln); err != nil {
+		panic(err)
+	}
 }

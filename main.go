@@ -16,17 +16,27 @@ type ArithMode int
 
 const (
 	Empty ArithMode = iota
-	AddSub
-	FillWithOneEquation
-	MultiAddSub
-	AddSubMix
-	FillWithTwoEquation
-	FillWithAddSubMix
+	AddOrSubWithin10
+	FillForOneEquationWithin10
+	MultiAddOrSubWithin10
+	MixAddAndSubWithin10
+	FillForTwoEquationWithin10
+	FillForMixAddAndSubWithin10
+	AddOrSubWithin20
 	Unknown
 )
 
 var (
-	Options = []string{"", "10以内加减", "10以内算式填空", "10以内连加或连减", "10以内加减混合", "10以内两边算式填空", "10以内两边加减算式填空"}
+	Options = []string{
+		"",
+		"10以内加减",
+		"10以内算式填空",
+		"10以内连加或连减",
+		"10以内加减混合",
+		"10以内两边算式填空",
+		"10以内两边加减算式填空",
+		"20以内加减",
+	}
 
 	// 使用当前时间作为种子来创建一个新的随机数源,基于新的随机数源创建一个新的随机数生成器
 	rng = rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -82,7 +92,7 @@ func Format(equations []string, colNum int) string {
 	return ret.String()
 }
 
-func AddSubExercises(hidden bool) string {
+func AddOrSubWithin10Exercises(hidden bool) string {
 	equations := make([]string, 0, 100)
 
 	subCnt := 0
@@ -111,7 +121,7 @@ func TriEquation(lhs, mhs, rhs int, op string) string {
 	return fmt.Sprintf("%2d %s %2d %s %2d = %2s", lhs, op, mhs, op, rhs, " ")
 }
 
-func MultiAddSubExercies() string {
+func MultiAddOrSubWithin10Exercies() string {
 	equations := make([]string, 0, 215)
 
 	subCnt := 0
@@ -143,7 +153,7 @@ func MultiAddSubExercies() string {
 	return fmt.Sprintf("%s\nsubCnt: %d, addCnt: %d\n", Format(equations, 5), subCnt, addCnt)
 }
 
-func AddSubMixExercies() string {
+func MixAddAndSubWithin10Exercies() string {
 	equations := make([]string, 0, 128)
 
 	preSubCnt := 0
@@ -188,7 +198,7 @@ func ReplaceCharAt(s string, start int, replacement string) string {
 	return sb.String()
 }
 
-func FillWithTwoEquationExercies() string {
+func FillForTwoEquationWithin10Exercies() string {
 	expressions := make(map[int][]string)
 	for i := 10; i > 0; i-- {
 		for j := i - 1; j > 0; j-- {
@@ -221,7 +231,7 @@ func FillWithTwoEquationExercies() string {
 	return fmt.Sprintf("%s\ntotalCnt: %d\n", Format(equations, 5), totalCnt)
 }
 
-func FilleWithAddSubMixExercies() string {
+func FilleForMixAddAndSubExercies() string {
 	expressions := make(map[int][]string)
 	for i := 10; i > 0; i-- {
 		for j := i - 1; j > 0; j-- {
@@ -265,22 +275,49 @@ func FilleWithAddSubMixExercies() string {
 	return fmt.Sprintf("%s\ntotalCnt: %d\n", Format(equations, 3), totalCnt)
 }
 
+func AddOrSubWithin20Exercies() string {
+	equations := make([]string, 0, 100)
+
+	subCnt := 0
+	for i := 11; i < 20; i++ {
+		for j := 1; j < 11; j++ {
+			equations = append(equations, fmt.Sprintf("%2d - %2d = %2s", i, j, " "))
+			subCnt++
+		}
+	}
+
+	addCnt := 0
+	for i := 1; i < 20; i++ {
+		for j := 1; j < 20; j++ {
+			if i+j <= 10 || i+j >= 20 {
+				continue
+			}
+			equations = append(equations, fmt.Sprintf("%2d + %2d = %2s", i, j, " "))
+			addCnt++
+		}
+	}
+
+	return fmt.Sprintf("%s\nsubCnt: %d, addCnt: %d\n", Format(equations, 7), subCnt, addCnt)
+}
+
 func Produce(mode ArithMode) string {
 	switch mode {
 	case Empty:
 		return ""
-	case AddSub:
-		return AddSubExercises(false)
-	case FillWithOneEquation:
-		return AddSubExercises(true)
-	case MultiAddSub:
-		return MultiAddSubExercies()
-	case AddSubMix:
-		return AddSubMixExercies()
-	case FillWithTwoEquation:
-		return FillWithTwoEquationExercies()
-	case FillWithAddSubMix:
-		return FilleWithAddSubMixExercies()
+	case AddOrSubWithin10:
+		return AddOrSubWithin10Exercises(false)
+	case FillForOneEquationWithin10:
+		return AddOrSubWithin10Exercises(true)
+	case MultiAddOrSubWithin10:
+		return MultiAddOrSubWithin10Exercies()
+	case MixAddAndSubWithin10:
+		return MixAddAndSubWithin10Exercies()
+	case FillForTwoEquationWithin10:
+		return FillForTwoEquationWithin10Exercies()
+	case FillForMixAddAndSubWithin10:
+		return FilleForMixAddAndSubExercies()
+	case AddOrSubWithin20:
+		return AddOrSubWithin20Exercies()
 	default:
 		return "unsupport this option"
 	}

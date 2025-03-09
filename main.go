@@ -23,6 +23,7 @@ const (
 	FillForTwoEquationWithin10
 	FillForMixAddAndSubWithin10
 	AddOrSubWithin20
+	FillForOneEquationWithin20
 	Unknown
 )
 
@@ -36,6 +37,7 @@ var (
 		"10以内两边算式填空",
 		"10以内两边加减算式填空",
 		"20以内加减",
+		"20以内算式填空",
 	}
 
 	// 使用当前时间作为种子来创建一个新的随机数源,基于新的随机数源创建一个新的随机数生成器
@@ -233,9 +235,9 @@ func FillForTwoEquationWithin10Exercies() string {
 
 func FilleForMixAddAndSubExercies() string {
 	expressions := make(map[int][]string)
-	for i := 10; i > 0; i-- {
-		for j := i - 1; j > 0; j-- {
-			for k := 1; k <= 10; k++ {
+	for i := 10; i > 1; i-- {
+		for j := i - 1; j > 1; j-- {
+			for k := 2; k <= 10; k++ {
 				if i-j+k > 10 || k == j {
 					continue
 				}
@@ -243,12 +245,12 @@ func FilleForMixAddAndSubExercies() string {
 			}
 		}
 	}
-	for i := 1; i <= 10; i++ {
-		for j := 1; j <= 10; j++ {
+	for i := 2; i <= 10; i++ {
+		for j := 2; j <= 10; j++ {
 			if i+j > 10 {
 				continue
 			}
-			for k := 1; k <= 10; k++ {
+			for k := 2; k <= 10; k++ {
 				if i+j-k < 0 {
 					continue
 				}
@@ -261,10 +263,16 @@ func FilleForMixAddAndSubExercies() string {
 	}
 	totalCnt := 0
 	equations := make([]string, 0, 128)
-	for _, es := range expressions {
+	for s, es := range expressions {
+		if s == 0 || s == 1 {
+			continue
+		}
 		rand.Shuffle(len(es), func(i, j int) { es[i], es[j] = es[j], es[i] })
-		for i := 0; i < len(es)-1; i++ {
+		for i := range len(es) - 1 {
 			for j := i + 1; j < len(es); j++ {
+				if es[i][2:7] == es[j][2:7] || es[i][7:12] == es[j][7:12] {
+					continue
+				}
 				fill := rng.Intn(6)
 				// AA + BB + CC = DD + EE + FF, replace AA/BB/CC/DD/EE/FF to "  "
 				equations = append(equations, ReplaceCharAt(fmt.Sprintf("%s = %s", es[i], es[j]), fill*5, "  "))
@@ -279,8 +287,11 @@ func AddOrSubWithin20Exercies() string {
 	equations := make([]string, 0, 100)
 
 	subCnt := 0
-	for i := 11; i < 20; i++ {
-		for j := 1; j < 11; j++ {
+	for i := 11; i <= 20; i++ {
+		for j := 1; j < 20; j++ {
+			if i <= j || j == 10 {
+				continue
+			}
 			equations = append(equations, fmt.Sprintf("%2d - %2d = %2s", i, j, " "))
 			subCnt++
 		}
@@ -289,7 +300,7 @@ func AddOrSubWithin20Exercies() string {
 	addCnt := 0
 	for i := 1; i < 20; i++ {
 		for j := 1; j < 20; j++ {
-			if i+j <= 10 || i+j >= 20 {
+			if i+j <= 10 || i+j > 20 {
 				continue
 			}
 			equations = append(equations, fmt.Sprintf("%2d + %2d = %2s", i, j, " "))
@@ -298,6 +309,49 @@ func AddOrSubWithin20Exercies() string {
 	}
 
 	return fmt.Sprintf("%s\nsubCnt: %d, addCnt: %d\n", Format(equations, 7), subCnt, addCnt)
+}
+
+func FillForOneEquationWithin20Exercies() string {
+	expressions := make(map[int][]string)
+
+	for i := 11; i <= 20; i++ {
+		for j := 1; j < 20; j++ {
+			if i <= j || j == 10 {
+				continue
+			}
+			expressions[i-j] = append(expressions[i-j], fmt.Sprintf("%2d - %2d", i, j))
+		}
+	}
+
+	for i := 1; i < 20; i++ {
+		for j := 1; j < 20; j++ {
+			if i+j <= 10 || i+j > 20 {
+				continue
+			}
+			expressions[i+j] = append(expressions[i+j], fmt.Sprintf("%2d + %2d", i, j))
+		}
+	}
+
+	totalCnt := 0
+	equations := make([]string, 0, 128)
+	for s, es := range expressions {
+		if s < 2 {
+			continue
+		}
+		rand.Shuffle(len(es), func(i, j int) { es[i], es[j] = es[j], es[i] })
+		for i := range len(es) - 1 {
+			for j := i + 1; j < len(es); j++ {
+				if es[i][3] == es[j][3] && es[i][0:1] == es[j][5:6] {
+					continue
+				}
+				fill := rng.Intn(3)
+				// AA + BB = CC + DD, replace AA/BB/CC/DD to "  "
+				equations = append(equations, ReplaceCharAt(fmt.Sprintf("%s = %s", es[i], es[j]), fill*5, "  "))
+				totalCnt++
+			}
+		}
+	}
+	return fmt.Sprintf("%s\ntotalCnt: %d\n", Format(equations, 5), totalCnt)
 }
 
 func Produce(mode ArithMode) string {
@@ -318,6 +372,8 @@ func Produce(mode ArithMode) string {
 		return FilleForMixAddAndSubExercies()
 	case AddOrSubWithin20:
 		return AddOrSubWithin20Exercies()
+	case FillForOneEquationWithin20:
+		return FillForOneEquationWithin20Exercies()
 	default:
 		return "unsupport this option"
 	}

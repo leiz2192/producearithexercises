@@ -25,6 +25,25 @@
           </select>
           <button type="submit">Update</button>
       </form>
-      <textarea class = "responsive-textarea" readonly>{{.Content}}</textarea>
+      <div>
+        <button class="copyText" onclick="copyText()">Copy</button>
+        <label id="toast"></label>
+      </div>
+      <br>
+      <textarea class="responsive-textarea" readonly>{{.Content}}</textarea>
+      <script>
+        function copyText() {
+          const text = document.querySelector('.responsive-textarea').value;
+          navigator.clipboard.writeText(text).then(() => {
+            const toast = document.getElementById("toast");
+            toast.innerText = "Copied to clipboard!";
+            setTimeout(() => {
+              toast.innerText = "";
+            }, 3000);
+          }).catch(err => {
+            console.error('Failed to copy text: ', err);
+          });
+        }
+      </script>
   </body>
 </html>

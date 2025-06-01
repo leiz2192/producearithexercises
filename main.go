@@ -268,16 +268,29 @@ func FilleForMixAddAndSubExercies() string {
 			continue
 		}
 		rand.Shuffle(len(es), func(i, j int) { es[i], es[j] = es[j], es[i] })
-		for i := range len(es) - 1 {
-			for j := i + 1; j < len(es); j++ {
-				if es[i][2:7] == es[j][2:7] || es[i][7:12] == es[j][7:12] {
-					continue
-				}
-				fill := rng.Intn(6)
-				// AA + BB + CC = DD + EE + FF, replace AA/BB/CC/DD/EE/FF to "  "
-				equations = append(equations, ReplaceCharAt(fmt.Sprintf("%s = %s", es[i], es[j]), fill*5, "  "))
-				totalCnt++
+		// for i := range len(es) - 1 {
+		// 	for j := i + 1; j < len(es); j++ {
+		// 		if es[i][2:7] == es[j][2:7] || es[i][7:12] == es[j][7:12] {
+		// 			continue
+		// 		}
+		// 		fill := rng.Intn(6)
+		// 		// AA + BB + CC = DD + EE + FF, replace AA/BB/CC/DD/EE/FF to "  "
+		// 		equations = append(equations, ReplaceCharAt(fmt.Sprintf("%s = %s", es[i], es[j]), fill*5, "  "))
+		// 		totalCnt++
+		// 	}
+		// }
+		for i := range len(es) {
+			j := i + 1
+			if j >= len(es) {
+				j = 0
 			}
+			// if es[i][2:7] == es[j][2:7] || es[i][7:12] == es[j][7:12] {
+			// 	continue
+			// }
+			fill := rng.Intn(6)
+			// AA + BB + CC = DD + EE + FF, replace AA/BB/CC/DD/EE/FF to "  "
+			equations = append(equations, ReplaceCharAt(fmt.Sprintf("%s = %s", es[i], es[j]), fill*5, "  "))
+			totalCnt++
 		}
 	}
 	return fmt.Sprintf("%s\ntotalCnt: %d\n", Format(equations, 3), totalCnt)
@@ -407,7 +420,7 @@ func main() {
 		selected := c.PostForm("options")
 		for i, option := range data.Options {
 			if selected == option {
-				data.Content = "Content for " + selected + "\n" + Produce(ArithMode(i))
+				data.Content = Produce(ArithMode(i))
 			}
 		}
 		data.Selected = selected
